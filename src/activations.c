@@ -167,9 +167,25 @@ float gradient(float x, ACTIVATION a)
 /*
 **
 **gradient_array:
-**输入:数组x，数组x的长度n，激活函数类型
-**输出：对数组x中的每个元素进行求梯度后赋给delta后输出
+**计算激活函数对加权输入的导数，并乘以delta，得到当前层最终的delta
 **
+**输入:数组x，数组x的长度n，激活函数类型，当前层的所有输出(维度为n = l.batch * l.out_c * l.out_w * l.out_h)
+       n,l.output的维度,n = l.batch * l.out_c * l.out_w * l.out_h
+       a 激活函数类型，ACTIVATION，枚举类型，具体可见darknet.h
+       delta,当前层敏感度图(与当前层输出x维度一样)
+**输出：对数组x中的每个元素进行求梯度，再乘以delta，后赋给delta后输出
+**
+**说明：
+**1.该函数不但计算了激活函数对于加权输入的导数，还将该导数乘以了之前完成大部分计算的敏感图delta(对应元素相乘)
+**  因此调用该函数后，将得到该层最终的敏感图
+**
+**2.这里直接利用输出值计算了激活函数关于输入的导数值是因为神经网络中所使用的绝大部分激活函数，其关于输入的导数值都可以描述为输出值的函数表达式
+**  比如Sigmoid激活函数(记作f(x))，其导数值f(x)' = f(x)*(1-f(x)),因此如果给出y=f(x),那么f(x)' = y * (1 - y),只需要输出值y就可以了，不再需要输入x的值
+**
+**3.关于l.delta的初值，可能你有注意到在看某一类型网络层的时候，比如卷积层中的backward_convolutional_layer()函数，没有发现在此之前对l.delta赋初值的语句，
+**  只是用calloc为其动态分配了内存，这样的l.delta其所有元素的值都为0，那么这里使用*=运算符得到的值恒为0
+**  但是整个网络是有很多层的，且有多种类型，一般来说，不会以卷积层为最后一层，而会以COST或者REGION为最后一层，
+**  这些层中，会对l.delta赋上初值，又由于l.delta是后向传播的，因此，当反向运行到某一层时，l.delta的值都不会为0
 */
 void gradient_array(const float *x, const int n, const ACTIVATION a, float *delta)
 {

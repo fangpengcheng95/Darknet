@@ -326,7 +326,7 @@ void backward_connected_layer(layer l, network net)
     /*b: 当前全连接层所有输入，维度为l.batch*l.inputs*/
     b = l.weights;
 
-    /*当前全连接层权重更新值，维度为l.outputs*l.inputs(权重个数)*/
+     /*当前全连接层权重更新值，维度为l.outputs*l.inputs(权重个数)*/
     c = net.delta;
 
     if(c) gemm(0,0,m,n,k,1,a,k,b,n,1,c,n);
